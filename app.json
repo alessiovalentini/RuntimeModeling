@@ -42,6 +42,19 @@
             "path": "app.js",
             "bundle": true,  /* Indicates that all class dependencies are concatenated into this file when build */
             "update": "delta"
+        },
+        {
+            "path": "resources/js/jquery-1.8.2.min.js"        // jQuery is necessary for the integration to work
+        },
+        {
+            "path": "resources/js/cordova-2.2.0.js"
+        },
+
+        {
+            "path": "resources/js/forcetk.js"                 // salesforce rest api javascript toolkit (modified version)
+        },
+        {
+            "path": "resources/js/salesforce.js"              // salesforce library from Alessio Valentini (alessio.valentini@makepositive.com)
         }
     ],
 
