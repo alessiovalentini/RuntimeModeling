@@ -15,7 +15,7 @@ Ext.define('RuntimeModeling.controller.AppCtrl', {
 			console.log('> connected to salesforce. client is', RuntimeModeling.salesforce.client );
 
 			// generate the array or passed model
-			AppCtrl.generateModels( ['News__c'] );
+			AppCtrl.defineModelsAndStores( ['News__c'] );
 		});
 	},
 
@@ -46,7 +46,7 @@ Ext.define('RuntimeModeling.controller.AppCtrl', {
 		}
 	},
 
-	generateModels : function ( modelsArray ) {
+	defineModelsAndStores : function ( modelsArray ) {
 		var AppCtrl = this;
 
 		// iterate through the modelsArray calling salesforce and generating all the models dynamically
@@ -58,21 +58,74 @@ Ext.define('RuntimeModeling.controller.AppCtrl', {
 					console.log('> got ' + success_response.label + ' describe successfully', success_response);
 
 					// generate the model runtime
-					AppCtrl._generateObjectModel( success_response.label, success_response.fields );
+					AppCtrl._defineObjectModel( success_response.label, success_response.fields );
 
 					// generate the store as well
-					AppCtrl._generateObjectStore( success_response.label, 'localstorage' );
+					AppCtrl._defineObjectStore( success_response.label, 'localstorage' );
+
+					// fire an ready event when they are ready (attach this to the document)
+					$(document).trigger('ModelsAndStoresReady');
 				},
 
 				function error( error_response) {
 
 				}
 			);
+
+			// news object metadata
+			// RuntimeModeling.salesforce.client.metadata( modelsArray[i],
+			// 	function success ( success_response ) {
+
+			// 		console.log('> news metadata', success_response);
+			// 	},
+
+			// 	function error( error_response) {
+
+			// 	}
+			// );
 		}
 
 	},
 
-	_generateObjectModel : function ( modelName, fields ) {
+	defineSimpleModel : function(){
+		Ext.define('User', {
+		    extend: 'Ext.data.Model',
+
+		    config: {
+
+		        fields: [
+		            {name: 'name',  type: 'string'},
+		            {name: 'age',   type: 'int'},
+		            {name: 'phone', type: 'string'},
+		            {name: 'alive', type: 'boolean', defaultValue: true}
+		        ]
+		    },
+
+		    changeName: function() {
+		        var oldName = this.get('name'),
+		            newName = oldName + " The Barbarian";
+
+		        this.set('name', newName);
+		    }
+		});
+
+		var user = Ext.create('User');
+
+		var User = Ext.ModelManager.getModel('User');
+
+		console.log(user);
+		console.log(User);
+
+		// user.changeName();
+		// console.log('> user', user.get('name') );
+
+	},
+
+	///////////////////////////////////////////////////////////////////////////////////////////
+	//	Internal methods
+	///////////////////////////////////////////////////////////////////////////////////////////
+
+	_defineObjectModel : function ( modelName, fields ) {
 		var fieldsNames;
 
 		// fields => array under success_response.fields
@@ -84,31 +137,56 @@ Ext.define('RuntimeModeling.controller.AppCtrl', {
 			fieldsNames.push( fields[i].name );
 		}
 
-		// defining News__c model at runtime | can use name (api name) or label
-		// this is directly addicng the model to the global app object
-		Ext.define( this.getApplication().name +  '.model.' + modelName, {
+		// define the model
+		Ext.define( this.getApplication().name +  '.model.' + modelName, {		// ex RuntimeModeling.model.News
 			extend: 'Ext.data.Model',
 
+			// config and fields
 			config: {
-				identifier: 'uuid',	// use the best strategy
-				fields: fieldsNames
+				// identifier: 'uuid',	// ATTENTION!!! this makes the runtime modeling not working
+				// idProperty : 'Id',		// using the sf id as unique id => solved identifier problem
+				fields     : fieldsNames
+			},
+
+			// utilities methods
+			timeAgoInWords : function( date ) {
+			    try {
+			        var now = Math.ceil(Number(new Date()) / 1000),
+			            dateTime = Math.ceil(Number(new Date(date)) / 1000),
+			            diff = now - dateTime,
+			            str;
+
+			        if (diff < 60) {
+			        	return String(diff) + ' seconds ago';
+			        } else if (diff < 3600) {
+			            str = String(Math.ceil(diff / (60)));
+			            return str + (str == "1" ? ' minute' : ' minutes') + ' ago';
+			        } else if (diff < 86400) {
+			            str = String(Math.ceil(diff / (3600)));
+			            return str + (str == "1" ? ' hour' : ' hours') + ' ago';
+			        } else if (diff < 60 * 60 * 24 * 365) {
+			            str = String(Math.ceil(diff / (60 * 60 * 24)));
+			            return str + (str == "1" ? ' day' : ' days') + ' ago';
+			        } else {
+			            return Ext.Date.format(new Date(date), 'jS M \'y');
+			        }
+			    } catch (e) {
+			        return '';
+			    }
 			}
 		});
-
-		// testing if the created model is correct
-		// var newsModel = Ext.create(modelName);
-		// console.log('> created ' +  modelName + ' model',  RuntimeModeling );
 	},
 
-	_generateObjectStore : function( storeName, proxyType ){
+	_defineObjectStore : function( storeName, proxyType ){
 
-		Ext.define( this.getApplication().name + '.store.' + storeName + 'Store', {
+		// define the store
+		Ext.define( this.getApplication().name + '.store.' + storeName + 'Store', {		// ex RuntimeModeling.store.NewsStore
 			extend: 'Ext.data.Store',
 
 			config: {
 
 				// use an unique id to reference the store [solve warnings and more problems]
-				storeId: this.getApplication().name + '_' + storeName + 'Store',	// ex: RuntimeModeling_NewsStore
+				// storeId: this.getApplication().name + '_' + storeName + 'Store',	// ex: RuntimeModeling_NewsStore
 				model  : this.getApplication().name + '.model.' + storeName,		// ex: RuntimeModeling.model.News
 
 				autoLoad: true,		// NOTE then it's not necessary to use store.load();
@@ -125,5 +203,34 @@ Ext.define('RuntimeModeling.controller.AppCtrl', {
 				this.removeAll();
 			}
 		});
+	},
+
+
+	///////////////////////////////////////////////////////////////////////////////////////////
+	//	Test methods
+	///////////////////////////////////////////////////////////////////////////////////////////
+
+	testModel : function( objectName ) {
+		var storeInstance, modelInstance;
+
+		if( objectName === 'News' ){
+
+			// store instance
+			storeInstance = Ext.create( this.getApplication().name + '.store.' + objectName + 'Store' );
+
+			// once the model is defined it's possible to create it
+			modelInstance = Ext.create( this.getApplication().name +  '.model.' + objectName, {
+
+				Title__c    : 'testtitle',
+				CreatedDate : Date.now()
+			});
+
+
+			// use of the timeAgoInWord() utility function
+			modelInstance.set('CreatedDate', modelInstance.timeAgoInWords(modelInstance.get('CreatedDate')) );
+
+			console.log('> model instance after timeAgoInWord', modelInstance);
+			console.log('> store instance', storeInstance);
+		}
 	}
 });
