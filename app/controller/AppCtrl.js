@@ -35,9 +35,6 @@ Ext.define('RuntimeModeling.controller.AppCtrl', {
 
         $(document).bind("ModelsAndStoresReady", function(){
 
-        	// clear interval
-			window.clearInterval( AppCtrl.checkModelsAndStoresReadyIntervalId );
-
         	// generate a test record for each model/store created at runtime
             for(var i in app.getModels() ){
             	console.log('> generating a test records for ', app.getModels()[i] );
@@ -53,6 +50,7 @@ Ext.define('RuntimeModeling.controller.AppCtrl', {
 	            // add the news to the store (please note the autosync and autoload)
 	           	appNamespace.runtimeStores[ app.getModels()[i] ].add( testRecord );
 	        }
+
         });
 	},
 
@@ -111,14 +109,15 @@ Ext.define('RuntimeModeling.controller.AppCtrl', {
 		}
 
 		// when all the models are ready trigger that they are
-		this.checkModelsAndStoresReadyIntervalId = setInterval(function(){
+		this.checkModelsAndStoresReadyIntervalId = setInterval(function checkModelsAndStoresReady(){
 			// they are ready if the number of registered stores === number of requested models
 			if( Object.keys(appNamespace.runtimeStores).length === modelsArray.length ){
 				console.log('> all requested sobjects are ready in <appName>.runtimeStores' );
 				// trigger the event
 				$(document).trigger('ModelsAndStoresReady');
+				// stop watch interval
+				window.clearInterval( AppCtrl.checkModelsAndStoresReadyIntervalId );
 			}
-
 		}, 1000 )
 
 	},
