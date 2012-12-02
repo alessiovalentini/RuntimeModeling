@@ -143,9 +143,13 @@ Ext.define('RuntimeModeling.controller.AppCtrl', {
 
 			// config and fields
 			config: {
-				// identifier: 'uuid',	// ATTENTION!!! this makes the runtime modeling not working
-				// idProperty : 'Id',		// using the sf id as unique id => solved identifier problem
-				fields     : fieldsNames
+				fields     : fieldsNames,
+				// identifier: 'uuid',		// ATTENTION!!! this makes the runtime modeling not working
+				// identifier : {
+		  //           type: 'sequential',
+		  //           prefix: modelName + '_',
+		  //           seed: 1000
+		  //       }
 			},
 
 			// utilities methods
@@ -200,7 +204,7 @@ Ext.define('RuntimeModeling.controller.AppCtrl', {
 			},
 
 			wipe: function(){
-				this.removeAll();
+				this.removeAll();	// autosync ons
 			}
 		});
 	},

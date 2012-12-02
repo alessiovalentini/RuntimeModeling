@@ -55,6 +55,9 @@
         },
         {
             "path": "resources/js/salesforce.js"              // salesforce library from Alessio Valentini (alessio.valentini@makepositive.com)
+        },
+        {
+            "path": "resources/js/myUtils.js"
         }
     ],
 

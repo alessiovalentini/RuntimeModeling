@@ -11,7 +11,8 @@ Ext.application({
     requires: [
         'Ext.MessageBox',
         'Ext.data.Store',
-        'Ext.data.proxy.LocalStorage'
+        'Ext.data.proxy.LocalStorage',
+        'Ext.data.proxy.SessionStorage'
     ],
 
     views       : ['Main', 'HomeContainer'],
@@ -24,17 +25,12 @@ Ext.application({
         var app = this;
 
         $(document).bind("ModelsAndStoresReady", function(){
-            console.log('> models and stores and defined');
+            console.log('> models and stores are defined');
 
-            var storeInstance, modelInstance, objectName;
-
-            // // once models and stores are defined it's possible to instanciate and then use them
-            // console.log( app.getController('AppCtrl').testModel('News') );
-
-            objectName = 'News';
+            var storeInstance, modelInstance;
 
             // create a news record
-            modelInstance = Ext.create( app.name +  '.model.' + objectName, {
+            modelInstance = Ext.create( app.name +  '.model.' + 'News', {
 
                 Title__c    : 'testtitle',
                 CreatedDate : Date.now(),
@@ -42,7 +38,7 @@ Ext.application({
             });
 
             // create a store to store the news record
-            storeInstance = Ext.create( app.name + '.store.' + objectName + 'Store' );
+            storeInstance = Ext.create( app.name + '.store.' + 'News' + 'Store' );
 
             // add the news to the store (please note the autosync and autoload)
             storeInstance.add( modelInstance );
